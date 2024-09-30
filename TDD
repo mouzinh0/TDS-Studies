@@ -1,0 +1,14 @@
+Test-Driven Development (TDD) is a software development approach where tests are written before the actual code.
+It follows a cycle that ensures the code is thoroughly tested from the beginning, leading to better design, fewer bugs, and cleaner code.
+
+The TDD Cycle: Red → Green → Refactor
+-> Red: Write a test that fails.
+-> Green: Write code to make the test pass.
+-> Refactor: Improve the code while ensuring the test still passes.
+
+Example of TDD Workflow:
+1) Write a test for a function that adds two numbers, expecting the result to be the sum of those two numbers.
+2) Run the test—it fails (because the function doesn’t exist yet).
+3) Write the add(a, b) function that returns the sum.
+4) Run the test—it passes.
+5) Refactor the function if necessary (e.g., rename variables, optimize the logic) while ensuring the test still passes.
