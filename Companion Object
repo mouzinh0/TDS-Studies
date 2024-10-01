@@ -1,0 +1,17 @@
+In Kotlin, classes do not have static methods or properties like in Java.
+Instead, Kotlin provides companion objects, which allow you to define methods and properties that are associated with the class itself, not its instances.
+
+Companion objects are declared inside the class and can contain methods and properties that can be accessed without needing to create an instance of the class.
+
+=============================
+companion object {
+    val values: List<Column>
+        get() = List(BOARD_DIM) { Column(it) }
+}
+=============================
+
+
+The values property belongs to the Column class itself, not to individual instances of the Column class.
+This makes sense because the valid columns are determined by the class and board dimensions, and there is no need to duplicate this list for every instance.
+The companion object allows you to put this logic at the class level, meaning you don’t need to create an instance of Column to access the valid columns.
+You can simply access it as Column.values.
