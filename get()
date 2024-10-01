@@ -1,0 +1,19 @@
+In Kotlin, get() is used to define custom getters for properties.
+This allows you to compute the value of a property when it is accessed, rather than storing the value directly.
+Essentially, it lets you define read-only, computed properties without explicitly calling a function.
+
+===========================
+Example from the code:
+val year get() = bits shr (DAY_BITS + MONTH_BITS)
+val month get() = (bits shr DAY_BITS) and (1 shl MONTH_BITS) - 1
+val day get() = bits and (1 shl DAY_BITS) - 1
+===========================
+
+Here, the year, month, and day properties don't store values directly.
+Instead, each time these properties are accessed, the value is calculated from the bits integer.
+The get() syntax defines a custom getter for each property.
+
+How it works:
+1) When you access year, it runs the code bits shr (DAY_BITS + MONTH_BITS) to compute the year from the bits field.
+2) This calculation occurs every time you ask for the year, rather than keeping a separate field in memory.
+
