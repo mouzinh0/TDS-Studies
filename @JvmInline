@@ -1,0 +1,52 @@
+@JvmInline is an annotation used in Kotlin to create a value class.
+A value class is a special kind of class that wraps a single value (in this case, the index: Int) 
+  and provides additional type safety without introducing the overhead of creating a full object on the JVM.
+The purpose of this annotation is to ensure that instances of the value class behave efficiently, being inlined at runtime, where possible.
+
+When you declare a value class using @JvmInline, Kotlin tries to avoid creating actual objects at runtime.
+Instead, it will treat instances of this class as if they were instances of the underlying type (an Int in this case), directly embedding the value in memory.
+
+
+This results in:
+
+-> Performance optimization: 
+It reduces the memory overhead of object creation, because instead of allocating memory for a full object, 
+the JVM will treat it as a primitive type (e.g., Int).
+
+-> Type safety:
+Even though the Column class is optimized to behave like an Int at runtime,
+it still retains its distinct type, so you can't accidentally confuse it with a plain integer.
+
+=========================================
+Why is @JvmInline useful in this case?
+1. Memory Efficiency
+The Column class wraps a simple Int value (representing the column index).
+Without @JvmInline, creating a Column instance would normally involve creating a separate object in memory that holds the Int.
+This introduces extra memory overhead, especially in performance-sensitive applications like a game
+where multiple Column instances might be created frequently.
+
+By using @JvmInline, the JVM will avoid allocating an actual Column object, and instead,
+treat Column as if it were just the Int it wraps. 
+This reduces the need for extra memory allocations and improves performance by avoiding the creation of small, short-lived objects.
+
+2. Type Safety
+Although Kotlin could technically use a plain Int to represent a column index,
+using a distinct Column type improves code readability and safety.
+For instance, if you have another class that also uses an Int (e.g., a Row class for row indices), you don't want to accidentally mix them up.
+By introducing a strong type for columns (Column), you ensure that different types (like rows and columns) aren't mistakenly used in the wrong context.
+
+Without the Column class, you could accidentally use a row index where a column index is expected, leading to potential bugs.
+With @JvmInline, you get the best of both worlds: the efficiency of primitive types (since Column is treated like an Int at runtime)
+and the type safety of a distinct class.
+
+Example:
+
+Without @JvmInline:
+val column1 = Column(1)  // Allocates memory for a new Column object
+val column2 = Column(2)  // Allocates memory for another Column object
+This code would result in the JVM allocating two separate objects, each holding an Int, even though Column is conceptually just wrapping an Int.
+
+With @JvmInline:
+val column1 = Column(1)  // No actual object allocation, column1 is treated as an Int
+val column2 = Column(2)  // No actual object allocation, column2 is treated as an Int
+Here, the JVM treats column1 and column2 as if they were simple Int values. No extra memory is used to create objects.
