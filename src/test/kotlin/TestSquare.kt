@@ -1,10 +1,11 @@
 import kotlin.test.*
-import isel.leic.tds.checkers.model.*
+
 /**
  * The Square type identifies a position on the board (Column and Row)
  * Squares are identified by one digit and one symbol.
  * The top left square is "8a" (if BOARD_DIM==8)
  */
+
 class TestSquare {
     @Test fun `Dimensions limits`() {
         assert(BOARD_DIM in 2..8 step 2){ "BOARD_DIM must be a pair in 2..8" }

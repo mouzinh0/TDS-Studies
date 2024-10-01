@@ -1,4 +1,4 @@
-import isel.leic.tds.checkers.model.*
+
 import kotlin.test.*
 /**
  * The Row type identifies one of the rows on the board.
@@ -6,6 +6,7 @@ import kotlin.test.*
  * The bottom row is '1' and the index is BOARD_DIM-1
  * Assume BOARD_DIM in 1..9
  */
+
 class TestRow {
     @Test fun `Build a Row by index and check properties`() {
         val index = BOARD_DIM-2

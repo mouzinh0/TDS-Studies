@@ -1,4 +1,4 @@
-import isel.leic.tds.checkers.model.*
+
 import kotlin.test.*
 /**
  * The Column type identifies one of the columns on the board.
@@ -35,7 +35,7 @@ class TestColumn {
         assertEquals(List(BOARD_DIM){'a'+it}, Column.values.map{ it.symbol })
     }
     @Test fun `All invalid columns`() {
-        val invalidChars = (0..255).map{ it.toChar() }- ('a'..<('a'+ BOARD_DIM))
+        val invalidChars = (0..255).map{ it.toChar() } - ('a'..<('a'+ BOARD_DIM))
         val invalidColumns = invalidChars.mapNotNull{ it.toColumnOrNull() }
         assertEquals(0 , invalidColumns.size)
     }
