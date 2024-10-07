@@ -1,4 +1,4 @@
-data class Square(val row: Row, val column: Column) {
+data class Square private constructor(val row: Row, val column: Column) {
     val index: Int
         get() = row.index * BOARD_DIM + column.index % BOARD_DIM
 
@@ -8,10 +8,13 @@ data class Square(val row: Row, val column: Column) {
     override fun toString(): String = "${row.digit}${column.symbol}"
 
     companion object {
-        val values: List<Square>
-            get() = Row.values.flatMap { row ->
-                Column.values.map { col -> Square(row, col) }
-            }
+        val values: List<Square> = Row.values.flatMap { row ->
+            Column.values.map { col -> Square(row, col) }
+        }
+        operator fun invoke(row: Row, column: Column): Square {
+            // Procura o Square correto na lista `values` usando o índice
+            return values.first { it.row == row && it.column == column }
+        }
     }
 }
 
