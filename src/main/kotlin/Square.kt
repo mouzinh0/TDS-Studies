@@ -2,6 +2,7 @@ data class Square private constructor(val row: Row, val column: Column) {
     val index: Int
         get() = row.index * BOARD_DIM + column.index % BOARD_DIM
 
+    // Sum is even(white) or odd(black)
     val black: Boolean
         get() = (row.index + column.index) % 2 != 0
 
