@@ -1,3 +1,5 @@
+package model
+
 import java.io.File
 
 fun Game.saveToFile() {

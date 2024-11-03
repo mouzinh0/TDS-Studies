@@ -1,3 +1,4 @@
+import model.*
 import kotlin.test.*
 
 /**
@@ -11,8 +12,8 @@ class TestSquare {
         assert(BOARD_DIM in 2..8 step 2){ "BOARD_DIM must be a pair in 2..8" }
     }
     @Test fun `Build a Square and check properties`() {
-        assertTrue(BOARD_DIM>2)
-        val row = Row(BOARD_DIM-2)
+        assertTrue(BOARD_DIM >2)
+        val row = Row(BOARD_DIM -2)
         val col = Column(2)
         val sut: Square = Square(row,col)
         assertEquals(row.index * BOARD_DIM + col.index % BOARD_DIM, sut.index)
@@ -20,24 +21,24 @@ class TestSquare {
         assertEquals(col.symbol, sut.column.symbol)
     }
     @Test fun `Create a black square and convert to string`() {
-        assertTrue(BOARD_DIM>2)
-        val square = Square(Row(1),Column(2))
+        assertTrue(BOARD_DIM >2)
+        val square = Square(Row(1), Column(2))
         assertTrue(square.black)
-        assertEquals("${BOARD_DIM-1}${'a'+2}", square.toString())
+        assertEquals("${BOARD_DIM -1}${'a'+2}", square.toString())
     }
     @Test fun `String to a white square and use index values`() {
-        assertTrue(BOARD_DIM>3)
+        assertTrue(BOARD_DIM >3)
         val square = "3d".toSquareOrNull()
         assertNotNull(square)
         assertEquals(3, square.column.index)
-        assertEquals(BOARD_DIM-3, square.row.index)
+        assertEquals(BOARD_DIM -3, square.row.index)
         assertFalse(square.black)
     }
     @Test fun `Invalid string to Square results null`() {
         assertNull("b3b".toSquareOrNull())
         assertNull("b3".toSquareOrNull())
         assertNull("3$".toSquareOrNull())
-        assertNull("${BOARD_DIM+1}a".toSquareOrNull())
+        assertNull("${BOARD_DIM +1}a".toSquareOrNull())
         assertNull("1${'a'+ BOARD_DIM}".toSquareOrNull())
     }
     @Test fun `Invalid string to Square throws exception`() {
@@ -51,8 +52,8 @@ class TestSquare {
         assertEquals("${BOARD_DIM}a", upperLeft.toString())
         assertEquals(0, upperLeft.index)
         val lowerRight = all.last()
-        assertEquals("1${'a'+ BOARD_DIM-1}", lowerRight.toString())
-        assertEquals(BOARD_DIM * BOARD_DIM-1, lowerRight.index)
+        assertEquals("1${'a'+ BOARD_DIM -1}", lowerRight.toString())
+        assertEquals(BOARD_DIM * BOARD_DIM -1, lowerRight.index)
     }
     @Test fun `Equality between squares`() {
         val row = assertNotNull('3'.toRowOrNull())

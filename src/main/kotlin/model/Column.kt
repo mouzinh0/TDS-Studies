@@ -1,3 +1,5 @@
+package model
+
 const val BOARD_DIM = 8 // a .. h
 
 @JvmInline

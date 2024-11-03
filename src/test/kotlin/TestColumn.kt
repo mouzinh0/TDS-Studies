@@ -1,4 +1,7 @@
 
+import model.BOARD_DIM
+import model.Column
+import model.toColumnOrNull
 import kotlin.test.*
 /**
  * The Column type identifies one of the columns on the board.

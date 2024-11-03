@@ -1,3 +1,7 @@
+package model
+
+import kotlin.math.abs
+
 data class Square private constructor(val row: Row, val column: Column) {
     val index: Int
         get() = row.index * BOARD_DIM + column.index % BOARD_DIM
@@ -27,3 +31,5 @@ fun String.toSquareOrNull(): Square? {
 }
 
 fun String.toSquare(): Square = toSquareOrNull() ?: throw IllegalArgumentException("Invalid square format")
+
+
