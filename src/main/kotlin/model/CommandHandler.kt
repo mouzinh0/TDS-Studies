@@ -57,11 +57,7 @@ class CommandHandler {
         game.displayBoard()
     }
 
-    private fun playMove(from: String?, to: String?) {
-        if (from == null || to == null) {
-            println("Please provide both 'from' and 'to' positions.")
-            return
-        }
+    private fun playMove(from: String, to: String) {
         val game = games.values.firstOrNull { it.turn != null } ?: run {
             println("No active game found.")
             return
@@ -87,7 +83,7 @@ class CommandHandler {
         currentGame()?.displayBoard() ?: println("No active game found.")
     }
 
-    private fun exitGame() {
+     fun exitGame() {
         println("Exiting game.")
         System.exit(0)
     }

@@ -1,7 +1,9 @@
 package model
 
 class Game(val gameId: String) {
+    // 2D array of PIECE objects
     val board = Array(BOARD_DIM) { Array<Piece?>(BOARD_DIM) { null } }
+    // 1D array
     val moves: MutableList<Char> = mutableListOf(
         ' ', 'b', ' ', 'b', ' ', 'b', ' ', 'b',
         'b', ' ', 'b', ' ', 'b', ' ', 'b', ' ',
@@ -12,19 +14,24 @@ class Game(val gameId: String) {
         ' ', 'w', ' ', 'w', ' ', 'w', ' ', 'w',
         'w', ' ', 'w', ' ', 'w', ' ', 'w', ' '
     )
+    // 2D array to represent visual state
     val movesSet: Array<Array<Char>> = Array(8) { row ->
         Array(8) { col ->
             moves[row * 8 + col]
         }
     }
+    // White goes first
     var turn = Piece.WHITE
-    private var gameState = GameState.IN_PROGRESS
+    // starts in progress
+    var gameState = GameState.IN_PROGRESS
+    // Moves in game
     private var moveCount = 0
 
     init {
         initializeBoard()
     }
 
+    // Board with Pieces Objects in place
     private fun initializeBoard() {
         // Place black pieces on rows 0 to 2 with alternating starting columns
         for (row in 0 until 3) {
@@ -41,7 +48,7 @@ class Game(val gameId: String) {
         }
     }
 
-
+    // Builds Visual Board
     fun displayBoard() {
         println("Turn = ${turn.symbol}")
         println("Player = ${turn.symbol}")
@@ -61,8 +68,7 @@ class Game(val gameId: String) {
     }
 
     fun makeMove(from: Square, to: Square): String {
-        val piece = board[from.row.index][from.column.index]
-        if (piece == null) return "No piece there."
+        val piece = board[from.row.index][from.column.index] ?: return "No piece there."
         if (piece.color() != turn) return "It's $turn's turn!"
 
         // Check if a capture is mandatory
@@ -83,7 +89,7 @@ class Game(val gameId: String) {
             val capturedRow = (from.row.index + to.row.index) / 2
             val capturedCol = (from.column.index + to.column.index) / 2
             board[capturedRow][capturedCol] = null
-            movesSet[capturedRow][capturedCol] = '-' // Update visual board for captured piece
+            movesSet[capturedRow][capturedCol] = '-'
         }
 
         if (to.row.index == 0 && piece == Piece.WHITE) {
@@ -111,21 +117,50 @@ class Game(val gameId: String) {
         val moves = mutableSetOf<Square>()
         val directions = if (piece == Piece.WHITE || piece == Piece.WHITE_QUEEN) listOf(-1) else listOf(1)
 
-        for (rowOffset in directions) {
-            for (colOffset in listOf(-1, 1)) {
-                val targetRow = square.row.index + rowOffset
-                val targetCol = square.column.index + colOffset
+        if (piece == Piece.WHITE_QUEEN || piece == Piece.BLACK_QUEEN) {
+            // Queen can move any number of squares diagonally
+            for (rowOffset in listOf(-1, 1)) {
+                for (colOffset in listOf(-1, 1)) {
+                    var targetRow = square.row.index + rowOffset
+                    var targetCol = square.column.index + colOffset
+                    while (targetRow in 0 until BOARD_DIM && targetCol in 0 until BOARD_DIM) {
+                        val targetSquare = Square(Row(targetRow), Column(targetCol))
+                        if (board[targetRow][targetCol] == null) {
+                            moves.add(targetSquare)
+                        } else if (board[targetRow][targetCol]?.color() != piece.color()) {
+                            // Check for a capture move
+                            val captureRow = targetRow + rowOffset
+                            val captureCol = targetCol + colOffset
+                            if (captureRow in 0 until BOARD_DIM && captureCol in 0 until BOARD_DIM && board[captureRow][captureCol] == null) {
+                                moves.add(Square(Row(captureRow), Column(captureCol)))
+                            }
+                            break // Stop checking in this direction after a capture or blocked piece
+                        } else {
+                            break // Blocked by a same-color piece
+                        }
+                        targetRow += rowOffset
+                        targetCol += colOffset
+                    }
+                }
+            }
+        } else {
+            // Regular piece movement
+            for (rowOffset in directions) {
+                for (colOffset in listOf(-1, 1)) {
+                    val targetRow = square.row.index + rowOffset
+                    val targetCol = square.column.index + colOffset
 
-                if (targetRow in 0 until BOARD_DIM && targetCol in 0 until BOARD_DIM) {
-                    val targetSquare = Square(Row(targetRow), Column(targetCol))
-                    if (board[targetRow][targetCol] == null) {
-                        moves.add(targetSquare)
-                    } else if (board[targetRow][targetCol]?.color() != piece.color()) {
-                        // Check for capture possibility
-                        val captureRow = targetRow + rowOffset
-                        val captureCol = targetCol + colOffset
-                        if (captureRow in 0 until BOARD_DIM && captureCol in 0 until BOARD_DIM && board[captureRow][captureCol] == null) {
-                            moves.add(Square(Row(captureRow), Column(captureCol)))
+                    if (targetRow in 0 until BOARD_DIM && targetCol in 0 until BOARD_DIM) {
+                        val targetSquare = Square(Row(targetRow), Column(targetCol))
+                        if (board[targetRow][targetCol] == null) {
+                            moves.add(targetSquare)
+                        } else if (board[targetRow][targetCol]?.color() != piece.color()) {
+                            // Check for capture possibility
+                            val captureRow = targetRow + rowOffset
+                            val captureCol = targetCol + colOffset
+                            if (captureRow in 0 until BOARD_DIM && captureCol in 0 until BOARD_DIM && board[captureRow][captureCol] == null) {
+                                moves.add(Square(Row(captureRow), Column(captureCol)))
+                            }
                         }
                     }
                 }
@@ -134,6 +169,8 @@ class Game(val gameId: String) {
 
         return moves
     }
+
+
 
 
     private fun changeTurn() {
@@ -151,7 +188,8 @@ class Game(val gameId: String) {
         }
 
         if (gameState != GameState.IN_PROGRESS) {
-            println("Model.Game over: $gameState")
+            println("$gameState")
+            CommandHandler().exitGame()
         }
     }
 
