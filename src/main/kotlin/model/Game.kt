@@ -2,7 +2,7 @@ package model
 
 class Game(val gameId: String) {
     // 2D array of PIECE objects
-    val board = Array(BOARD_DIM) { Array<Piece?>(BOARD_DIM) { null } }
+    var board = Array(BOARD_DIM) { Array<Piece?>(BOARD_DIM) { null } }
     // 1D array
     val moves: MutableList<Char> = mutableListOf(
         ' ', 'b', ' ', 'b', ' ', 'b', ' ', 'b',
@@ -29,6 +29,7 @@ class Game(val gameId: String) {
 
     init {
         initializeBoard()
+        saveGame(gameId, board, turn)
     }
 
     // Board with Pieces Objects in place
@@ -102,6 +103,7 @@ class Game(val gameId: String) {
 
         changeTurn()
         checkGameOver()
+        saveGame(gameId, board, turn)
         displayBoard()
         return "Move successful."
         }
@@ -172,11 +174,47 @@ class Game(val gameId: String) {
 
 
 
+    private fun isCaptureMove(from: Square, to: Square, piece: Piece): Boolean {
+        val rowDiff = Math.abs(from.row.index - to.row.index)
+        val colDiff = Math.abs(from.column.index - to.column.index)
+        return rowDiff == 2 && colDiff == 2 // A capture move must jump two squares
+    }
 
+
+    // Checks for all squares if its next jumps have eatable piece with help of isCapturePossible()
+    private fun mandatoryCaptureExists(): Boolean {
+        for (row in 0 until BOARD_DIM) {
+            for (col in 0 until BOARD_DIM) {
+                val piece = board[row][col]
+                if (piece?.color() == turn && isCapturePossible(Square(Row(row), Column(col)), piece)) {
+                    return true
+                }
+            }
+        }
+        return false
+    }
+
+
+    private fun isCapturePossible(square: Square, piece: Piece): Boolean {
+        val validMoves = calculateValidMoves(square, piece)
+        return validMoves.any { target ->
+            val middleRow = (square.row.index + target.row.index) / 2
+            val middleCol = (square.column.index + target.column.index) / 2
+            val middlePiece = board[middleRow][middleCol]
+            middlePiece != null && middlePiece.color() != piece.color()
+        }
+    }
+
+
+    // Helper to changer turn
     private fun changeTurn() {
         turn = if (turn == Piece.WHITE) Piece.BLACK else Piece.WHITE
     }
 
+    // Helper to get piece color
+    private fun Piece.color() = if (this == Piece.WHITE || this == Piece.WHITE_QUEEN) Piece.WHITE else Piece.BLACK
+
+    // Checks for end game
     private fun checkGameOver() {
         val whitePieces = board.flatten().count { it?.color() == Piece.WHITE }
         val blackPieces = board.flatten().count { it?.color() == Piece.BLACK }
@@ -190,36 +228,6 @@ class Game(val gameId: String) {
         if (gameState != GameState.IN_PROGRESS) {
             println("$gameState")
             CommandHandler().exitGame()
-        }
-    }
-
-    private fun Piece.color() = if (this == Piece.WHITE || this == Piece.WHITE_QUEEN) Piece.WHITE else Piece.BLACK
-
-    private fun mandatoryCaptureExists(): Boolean {
-        for (row in 0 until BOARD_DIM) {
-            for (col in 0 until BOARD_DIM) {
-                val piece = board[row][col]
-                if (piece?.color() == turn && isCapturePossible(Square(Row(row), Column(col)), piece)) {
-                    return true
-                }
-            }
-        }
-        return false
-    }
-
-    private fun isCaptureMove(from: Square, to: Square, piece: Piece): Boolean {
-        val rowDiff = Math.abs(from.row.index - to.row.index)
-        val colDiff = Math.abs(from.column.index - to.column.index)
-        return rowDiff == 2 && colDiff == 2 // A capture move must jump two squares
-    }
-
-    private fun isCapturePossible(square: Square, piece: Piece): Boolean {
-        val validMoves = calculateValidMoves(square, piece)
-        return validMoves.any { target ->
-            val middleRow = (square.row.index + target.row.index) / 2
-            val middleCol = (square.column.index + target.column.index) / 2
-            val middlePiece = board[middleRow][middleCol]
-            middlePiece != null && middlePiece.color() != piece.color()
         }
     }
 
