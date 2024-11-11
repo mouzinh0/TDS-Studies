@@ -38,7 +38,7 @@ class GameTest {
 
             // Optionally, assert that each move is successful
             assertEquals("Move successful.", result, "Expected move from $from to $to to be successful.")
-            game.displayBoard() // To visually check each move in the output
+            game.displayBoard(playerColor = null) // To visually check each move in the output
         }
     }
 

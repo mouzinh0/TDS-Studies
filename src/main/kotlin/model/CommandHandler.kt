@@ -153,12 +153,6 @@ class CommandHandler {
         game.displayBoard(playerColor)
     }
 
-        //val game = games[currentGameId] ?: Game(currentGameId!!).also { games[currentGameId!!] = it }
-        //currentGame()?.displayBoard() ?: println("No active game found.")
-        //currentGame()?.let { currentGame()?.let { it1 -> loadGame(it.gameId, it1.board) } }
-        //loadGame(currentGameId!!, game.board)
-        //currentGame()?.displayBoard() ?: println("No active game found.")
-
 
      private fun exitGame() {
         println("Exiting game.")
