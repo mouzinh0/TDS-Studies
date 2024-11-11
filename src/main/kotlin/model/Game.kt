@@ -1,35 +1,30 @@
 package model
 
-class Game(val gameId: String) {
+class Game(val gameId: String, gameStateData: GameStateData? = null) {
     // 2D array of PIECE objects
     var board = Array(BOARD_DIM) { Array<Piece?>(BOARD_DIM) { null } }
-    // 1D array
-    val moves: MutableList<Char> = mutableListOf(
-        ' ', 'b', ' ', 'b', ' ', 'b', ' ', 'b',
-        'b', ' ', 'b', ' ', 'b', ' ', 'b', ' ',
-        ' ', 'b', ' ', 'b', ' ', 'b', ' ', 'b',
-        '-', ' ', '-', ' ', '-', ' ', '-', ' ',
-        ' ', '-', ' ', '-', ' ', '-', ' ', '-',
-        'w', ' ', 'w', ' ', 'w', ' ', 'w', ' ',
-        ' ', 'w', ' ', 'w', ' ', 'w', ' ', 'w',
-        'w', ' ', 'w', ' ', 'w', ' ', 'w', ' '
-    )
-    // 2D array to represent visual state
-    val movesSet: Array<Array<Char>> = Array(8) { row ->
-        Array(8) { col ->
-            moves[row * 8 + col]
-        }
-    }
-    // White goes first
-    var turn = Piece.WHITE
-    // starts in progress
+
+    var turn: Piece
     var gameState = GameState.IN_PROGRESS
-    // Moves in game
-    private var moveCount = 0
+    var moveCount: Int = 0
+    var playerAssignments: MutableMap<Piece, Boolean>
 
     init {
-        initializeBoard()
-        saveGame(gameId, board, turn)
+        if (gameStateData?.turn != null && gameStateData.board.any { row -> row.any { it != null } }) {
+            // Use the loaded game data if it's valid
+            this.board = gameStateData.board
+            this.turn = gameStateData.turn
+            this.moveCount = gameStateData.moveCount
+            this.playerAssignments = gameStateData.playerAssignments.toMutableMap()
+        } else {
+            // No valid game data, initialize a new game
+            board = Array(BOARD_DIM) { Array<Piece?>(BOARD_DIM) { null } }
+            turn = Piece.WHITE
+            moveCount = 0
+            playerAssignments = mutableMapOf(Piece.WHITE to false, Piece.BLACK to false)
+            initializeBoard()
+            saveGame()
+        }
     }
 
     // Board with Pieces Objects in place
@@ -49,24 +44,41 @@ class Game(val gameId: String) {
         }
     }
 
+    fun updateState(gameStateData: GameStateData) {
+        this.board = gameStateData.board
+        this.turn = gameStateData.turn ?: Piece.WHITE
+        this.moveCount = gameStateData.moveCount
+        this.playerAssignments = gameStateData.playerAssignments.toMutableMap()
+    }
+
+    fun saveGame() {
+        GameStorage.saveGame(gameId, this)
+    }
+
     // Builds Visual Board
-    fun displayBoard() {
+    fun displayBoard(playerColor: Piece?) {
         println("Turn = ${turn.symbol}")
-        println("Player = ${turn.symbol}")
+        println("Player = ${playerColor?.symbol ?: "Unknown"}")
         println("   a b c d e f g h")
         println(" +-----------------+")
-        for (row in 0 .. 7) {
-            print("${8 - row}| ") // Row label
-            for (col in 0..7) {
-                print("${movesSet[row][col]} ") // Display each piece or empty space
+        for (rowIndex in 0 until BOARD_DIM) {
+            val rowNumber = BOARD_DIM - rowIndex
+            print("$rowNumber| ")
+            for (colIndex in 0 until BOARD_DIM) {
+                val piece = board[rowIndex][colIndex]
+                val symbol = when {
+                    piece != null -> piece.symbol
+                    (rowIndex + colIndex) % 2 == 0 -> ' ' // White square
+                    else -> '-' // Black square
+                }
+                print("$symbol ")
             }
-            println("|${8 - row}") // Row label on the right side
+            println("|$rowNumber")
         }
         println(" +-----------------+")
-        println("   a b c d e f g h") // Column labels
-
-
+        println("   a b c d e f g h")
     }
+
 
     fun makeMove(from: Square, to: Square): String {
         val piece = board[from.row.index][from.column.index] ?: return "No piece there."
@@ -82,31 +94,31 @@ class Game(val gameId: String) {
         // Execute move
         board[to.row.index][to.column.index] = piece
         board[from.row.index][from.column.index] = null
-        movesSet[to.row.index][to.column.index] = piece.symbol
-        movesSet[from.row.index][from.column.index] = '-'
+        moveCount++
 
         // Handle capturing logic
         if (isCaptureMove(from, to, piece)) {
             val capturedRow = (from.row.index + to.row.index) / 2
             val capturedCol = (from.column.index + to.column.index) / 2
             board[capturedRow][capturedCol] = null
-            movesSet[capturedRow][capturedCol] = '-'
+            moveCount++
         }
 
         if (to.row.index == 0 && piece == Piece.WHITE) {
             board[to.row.index][to.column.index] = Piece.WHITE_QUEEN
-            movesSet[to.row.index][to.column.index] = 'W'
         } else if (to.row.index == BOARD_DIM - 1 && piece == Piece.BLACK) {
             board[to.row.index][to.column.index] = Piece.BLACK_QUEEN
-            movesSet[to.row.index][to.column.index] = 'B'
         }
 
         changeTurn()
-        checkGameOver()
-        saveGame(gameId, board, turn)
-        displayBoard()
-        return "Move successful."
-        }
+        val gameOver = checkGameOver()
+        saveGame()
+        return if (gameOver) {
+            "Game Over: $gameState"
+        } else {
+            "Move successful."
+        }    }
+
 
 
 
@@ -215,7 +227,7 @@ class Game(val gameId: String) {
     private fun Piece.color() = if (this == Piece.WHITE || this == Piece.WHITE_QUEEN) Piece.WHITE else Piece.BLACK
 
     // Checks for end game
-    private fun checkGameOver() {
+    private fun checkGameOver(): Boolean {
         val whitePieces = board.flatten().count { it?.color() == Piece.WHITE }
         val blackPieces = board.flatten().count { it?.color() == Piece.BLACK }
 
@@ -225,11 +237,9 @@ class Game(val gameId: String) {
             else -> GameState.IN_PROGRESS
         }
 
-        if (gameState != GameState.IN_PROGRESS) {
-            println("$gameState")
-            CommandHandler().exitGame()
-        }
+        return gameState != GameState.IN_PROGRESS
     }
+
 
 }
 

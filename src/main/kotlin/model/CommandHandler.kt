@@ -1,8 +1,13 @@
 package model
 
+import java.io.File
+
 class CommandHandler {
     private val games = mutableMapOf<String, Game>()
     private var currentGameId: String? = null // Track the active game ID
+    private var playerColor: Piece? = null
+
+
 
 
     fun executeCommand(command: String) {
@@ -52,14 +57,56 @@ class CommandHandler {
 
 
     private fun startGame(gameId: String) {
-        val game = games[gameId] ?: Game(gameId).also { games[gameId] = it }
+        val gameFile = File("game_$gameId.txt")
+        val game: Game
+
+        if (gameFile.exists()) {
+            val gameStateData = GameStorage.loadGame(gameId)
+            game = if (gameStateData != null) {
+                games[gameId] ?: Game(gameId, gameStateData)
+            } else {
+                // If gameStateData is null, initialize a new game
+                Game(gameId)
+            }
+            games[gameId] = game
+        } else {
+            // No existing game, create a new one
+            game = Game(gameId)
+            games[gameId] = game
+        }
+
         currentGameId = gameId
-        game.displayBoard()
+
+        // Assign player color
+        if (game.playerAssignments[Piece.WHITE] != true) {
+            playerColor = Piece.WHITE
+            game.playerAssignments[Piece.WHITE] = true
+            println("You are playing as white.")
+        } else if (game.playerAssignments[Piece.BLACK] != true) {
+            playerColor = Piece.BLACK
+            game.playerAssignments[Piece.BLACK] = true
+            println("You are playing as black.")
+        } else {
+            // Game is full or needs to create a new one based on your logic
+            println("Game is full or needs to create a new one.")
+            return
+        }
+
+        game.saveGame()
+        game.displayBoard(playerColor)
     }
 
+
+
+
     private fun playMove(from: String, to: String) {
-        val game = games.values.firstOrNull { it.turn != null } ?: run {
+        val game = currentGame() ?: run {
             println("No active game found.")
+            return
+        }
+
+        if (playerColor != game.turn) {
+            println("It's not your turn.")
             return
         }
 
@@ -72,28 +119,40 @@ class CommandHandler {
 
         val resultMessage = game.makeMove(fromSquare, toSquare)
         println(resultMessage)
+        game.displayBoard(playerColor)
+
+        if (game.gameState != GameState.IN_PROGRESS) {
+            println("Game over: ${game.gameState}")
+            exitGame()
+        }
     }
+
 
 
     private fun showGrid() {
-        currentGame()?.displayBoard() ?: println("No active game found.")
+        currentGame()?.displayBoard(playerColor) ?: println("No active game found.")
     }
 
     private fun refreshGame() {
-        currentGame()?.let {
-            val (loadedBoard, loadedTurn) = loadGame(it.gameId)
-            if (loadedTurn == it.turn) {
-                println("It's still the other player's turn. Waiting...")
-            } else {
-                it.board = loadedBoard
-                if (loadedTurn != null) {
-                    it.turn = loadedTurn
-                }
-                println("Your turn! Here's the updated board:")
-                it.displayBoard()
-            }
-        } ?: println("No active game found.")
+        val game = currentGame()
+        if (game == null) {
+            println("No active game found.")
+            return
+        }
+
+        val newGameState = GameStorage.loadGame(game.gameId)
+        if (newGameState != null) {
+            game.updateState(newGameState)
+        }
+
+        if (playerColor != game.turn) {
+            println("It's not your turn.")
+        } else {
+            println("It's your turn!")
+        }
+        game.displayBoard(playerColor)
     }
+
         //val game = games[currentGameId] ?: Game(currentGameId!!).also { games[currentGameId!!] = it }
         //currentGame()?.displayBoard() ?: println("No active game found.")
         //currentGame()?.let { currentGame()?.let { it1 -> loadGame(it.gameId, it1.board) } }
@@ -101,7 +160,7 @@ class CommandHandler {
         //currentGame()?.displayBoard() ?: println("No active game found.")
 
 
-     fun exitGame() {
+     private fun exitGame() {
         println("Exiting game.")
         System.exit(0)
     }
