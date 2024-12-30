@@ -1,165 +1,66 @@
 package model
 
-import java.io.File
+import storage.MongoGameStorage
 
 class CommandHandler {
     private val games = mutableMapOf<String, Game>()
-    private var currentGameId: String? = null // Track the active game ID
+    private var currentGameId: String? = null
     private var playerColor: Piece? = null
 
+    var onGameUpdated: ((Game) -> Unit)? = null  // callback for UI
 
-
-
-    fun executeCommand(command: String) {
-        val parts = command.split(" ")
-        val action = parts.getOrNull(0)
-
-        when (action) {
-            "start" -> {
-                val gameId = parts.getOrNull(1)
-                if (gameId == null) {
-                    println("Error: A game ID is required to start the game.")
-                } else {
-                    startGame(gameId)
-                }
-            }
-            "play" -> {
-                if (currentGameId == null) {
-                    println("Error: Start a game first with the 'start' command.")
-                } else {
-                    val from = parts.getOrNull(1)
-                    val to = parts.getOrNull(2)
-                    if (from == null || to == null) {
-                        println("Error: Please provide both 'from' and 'to' positions for the play command.")
-                    } else {
-                        playMove(from, to)
-                    }
-                }
-            }
-            "grid" -> {
-                if (currentGameId == null) {
-                    println("Error: Start a game first with the 'start' command.")
-                } else {
-                    showGrid()
-                }
-            }
-            "refresh" -> {
-                if (currentGameId == null) {
-                    println("Error: Start a game first with the 'start' command.")
-                } else {
-                    refreshGame()
-                }
-            }
-            "exit" -> exitGame()
-            else -> println("Unknown command. Available commands are: start, play, grid, refresh, exit.")
-        }
-    }
-
-
-    private fun startGame(gameId: String) {
-        val gameFile = File("game_$gameId.txt")
-        val game: Game
-
-        if (gameFile.exists()) {
-            val gameStateData = GameStorage.loadGame(gameId)
-            game = if (gameStateData != null) {
-                games[gameId] ?: Game(gameId, gameStateData)
-            } else {
-                // If gameStateData is null, initialize a new game
-                Game(gameId)
-            }
-            games[gameId] = game
+    fun startGame(gameId: String) {
+        // Attempt to load from Mongo
+        val loaded = MongoGameStorage.loadGame(gameId)
+        val game = if (loaded != null) {
+            Game(gameId, loaded)
         } else {
-            // No existing game, create a new one
-            game = Game(gameId)
-            games[gameId] = game
+            // Create new
+            Game(gameId)
         }
-
+        games[gameId] = game
         currentGameId = gameId
 
-        // Assign player color
+        // Assign color if not assigned
         if (game.playerAssignments[Piece.WHITE] != true) {
             playerColor = Piece.WHITE
             game.playerAssignments[Piece.WHITE] = true
-            println("You are playing as white.")
         } else if (game.playerAssignments[Piece.BLACK] != true) {
             playerColor = Piece.BLACK
             game.playerAssignments[Piece.BLACK] = true
-            println("You are playing as black.")
-        } else {
-            // Game is full or needs to create a new one based on your logic
-            println("Game is full or needs to create a new one.")
-            return
         }
 
-        game.saveGame()
-        game.displayBoard(playerColor)
+        saveGame(game)
+        onGameUpdated?.invoke(game)
     }
 
+    fun refreshGame() {
+        val game = currentGame() ?: return
+        val loaded = MongoGameStorage.loadGame(game.gameId) ?: return
+        val updatedGame = Game(game.gameId, loaded)
+        games[game.gameId] = updatedGame
+        onGameUpdated?.invoke(updatedGame)
+    }
 
-
-
-    private fun playMove(from: String, to: String) {
-        val game = currentGame() ?: run {
-            println("No active game found.")
-            return
-        }
-
+    fun makeMove(from: String, to: String) {
+        val game = currentGame() ?: return
         if (playerColor != game.turn) {
-            println("It's not your turn.")
             return
         }
-
-        val fromSquare = from.toSquareOrNull()
-        val toSquare = to.toSquareOrNull()
-        if (fromSquare == null || toSquare == null) {
-            println("Invalid move format. Use coordinates like '4a' and '5b'.")
-            return
-        }
-
-        val resultMessage = game.makeMove(fromSquare, toSquare)
-        println(resultMessage)
-        game.displayBoard(playerColor)
-
-        if (game.gameState != GameState.IN_PROGRESS) {
-            println("Game over: ${game.gameState}")
-            exitGame()
-        }
+        val fromSquare = from.toSquareOrNull() ?: return
+        val toSquare = to.toSquareOrNull() ?: return
+        game.makeMove(fromSquare, toSquare)
+        saveGame(game)
+        onGameUpdated?.invoke(game)
     }
 
-
-
-    private fun showGrid() {
-        currentGame()?.displayBoard(playerColor) ?: println("No active game found.")
-    }
-
-    private fun refreshGame() {
-        val game = currentGame()
-        if (game == null) {
-            println("No active game found.")
-            return
-        }
-
-        val newGameState = GameStorage.loadGame(game.gameId)
-        if (newGameState != null) {
-            game.updateState(newGameState)
-        }
-
-        if (playerColor != game.turn) {
-            println("It's not your turn.")
-        } else {
-            println("It's your turn!")
-        }
-        game.displayBoard(playerColor)
-    }
-
-
-     private fun exitGame() {
-        println("Exiting game.")
-        System.exit(0)
-    }
-
-    private fun currentGame(): Game? {
+    fun currentGame(): Game? {
         return currentGameId?.let { games[it] }
+    }
+
+    fun getPlayerColor() = playerColor
+
+    fun saveGame(game: Game) {
+        MongoGameStorage.saveGame(game.toGameStateData())
     }
 }
